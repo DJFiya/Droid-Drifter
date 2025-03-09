@@ -223,7 +223,8 @@ void Game::renderTileMap(){
 }
 
 void Game::render(){
-	this->window.clear();
+	sf::Color color(122, 134, 151);
+	this->window.clear(color);
 
 	this->renderTileMap();
 	this->renderPlayer();
