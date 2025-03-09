@@ -39,7 +39,9 @@ public:
 	//Functions
 	void updateInput();
 	void updatePlayer();
+	void playerMove();
 	void updateCollision();
+	sf::FloatRect getIntersection(const sf::FloatRect& rect1, const sf::FloatRect& rect2);
 	void updateTileMap();
 	void update();
 

@@ -57,7 +57,9 @@ public:
 	void resetAnimationTimer();
 	void move(const float dir_x, const float dir_y);
 	void jump();
+	void shortjump();
 	void updatePhysics();
+	void move();
 	void updateMovement();
 	void updateAnimation();
 	void update();

@@ -6,7 +6,7 @@ TileMap::TileMap(){
 	this->tileSize = 0;
 }
 
-TileMap::TileMap(unsigned width, unsigned height, sf::Texture* tile_sheet, unsigned tile_size) {
+TileMap::TileMap(unsigned width, unsigned height, sf::Texture* tile_sheet, unsigned tile_size): width(width), height(height) {
 	this->tileSheet = tile_sheet;
 	this->tileSize = tile_size;
 
@@ -14,12 +14,9 @@ TileMap::TileMap(unsigned width, unsigned height, sf::Texture* tile_sheet, unsig
 	for (int i = 0; i < this->tiles.size(); i++) {
 		this->tiles[i].resize(height, nullptr);
 	}
-	addTile(0, 10, 2);
-	addTile(1, 10, 2);
-	addTile(2, 10, 2);
-	addTile(4, 9, 3);
-	addTile(5, 9, 3);
-	addTile(6, 9, 3);
+	for (int i = 0; i < this->tiles[0].size(); i++) {
+		addTile(i, 10, 2);
+	}
 }
 
 TileMap::~TileMap(){

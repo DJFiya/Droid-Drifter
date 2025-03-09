@@ -22,7 +22,7 @@ void Player::initVars() {
 
 void Player::initSprite(){
 	this->sprite.setTexture(this->textureSheet);
-	this->currentFrame = sf::IntRect(0, 32, 32, 32);
+	this->currentFrame = sf::IntRect(6, 32, 22, 32);
 	this->sprite.setTextureRect(currentFrame);
 	this->sprite.setScale(2.f, 2.f);
 }
@@ -111,6 +111,10 @@ void Player::jump()
 	this->isJumping = true;
 }
 
+void Player::shortjump(){
+	this->velocity.y *= 0.8;
+}
+
 void Player::updatePhysics(){
 	float currentGravity = this->gravity;
 
@@ -132,7 +136,10 @@ void Player::updatePhysics(){
 	if (std::abs(this->velocity.y) < this->velocityMin) this->velocity.y = 0.f;
 
 	if (std::abs(this->velocity.x) <= 0.5f) this->velocity.x = 0.f;
+	
+}
 
+void Player::move() {
 	this->sprite.move(this->velocity);
 }
 
@@ -159,7 +166,7 @@ void Player::updateAnimation(){
 		if (this->animationTimer.getElapsedTime().asSeconds() >= 0.2f || this->getAnimationSwitch()) {
 			this->currentFrame.top = 32.f;
 			this->currentFrame.left += 32.f;
-			if (this->currentFrame.left >= 160.f) this->currentFrame.left = 0;
+			if (this->currentFrame.left >= 160.f) this->currentFrame.left = 6;
 
 			this->sprite.setTextureRect(this->currentFrame);
 			this->animationTimer.restart();
@@ -169,7 +176,7 @@ void Player::updateAnimation(){
 		if (this->animationTimer.getElapsedTime().asSeconds() >= 0.2f) {
 			this->currentFrame.top = 0.f;
 			this->currentFrame.left += 32.f;
-			if (this->currentFrame.left >= 160.f) this->currentFrame.left = 0;
+			if (this->currentFrame.left >= 160.f) this->currentFrame.left = 6;
 
 			this->sprite.setTextureRect(this->currentFrame);
 			this->animationTimer.restart();
@@ -181,7 +188,7 @@ void Player::updateAnimation(){
 		if (this->animationTimer.getElapsedTime().asSeconds() >= 0.2f) {
 			this->currentFrame.top = 0.f;
 			this->currentFrame.left += 32.f;
-			if (this->currentFrame.left >= 160.f) this->currentFrame.left = 0;
+			if (this->currentFrame.left >= 160.f) this->currentFrame.left = 6;
 
 			this->sprite.setTextureRect(this->currentFrame);
 			this->animationTimer.restart();
@@ -193,7 +200,7 @@ void Player::updateAnimation(){
 		if (this->animationTimer.getElapsedTime().asSeconds() >= 0.2f) {
 			this->currentFrame.top = 64.f;
 			this->currentFrame.left += 32.f;
-			if (this->currentFrame.left >= 64.f) this->currentFrame.left = 0;
+			if (this->currentFrame.left >= 64.f) this->currentFrame.left = 6;
 
 			this->sprite.setTextureRect(this->currentFrame);
 			this->animationTimer.restart();
@@ -203,7 +210,7 @@ void Player::updateAnimation(){
 		if (this->animationTimer.getElapsedTime().asSeconds() >= 0.2f) {
 			this->currentFrame.top = 64.f;
 			this->currentFrame.left += 32.f;
-			if (this->currentFrame.left >= 160.f) this->currentFrame.left =96;
+			if (this->currentFrame.left >= 160.f) this->currentFrame.left =102;
 
 			this->sprite.setTextureRect(this->currentFrame);
 			this->animationTimer.restart();
@@ -222,4 +229,12 @@ void Player::update(){
 
 void Player::render(sf::RenderTarget& target){
 	target.draw(this->sprite);
+	//Hitbox:
+	/*sf::FloatRect bounds = this->getGlobalBounds();
+	sf::RectangleShape boundsRect(sf::Vector2f(bounds.width, bounds.height));
+	boundsRect.setPosition(bounds.left, bounds.top);
+	boundsRect.setFillColor(sf::Color::Transparent);  
+	boundsRect.setOutlineColor(sf::Color::Red);       
+	boundsRect.setOutlineThickness(2);
+	target.draw(boundsRect);*/
 }
