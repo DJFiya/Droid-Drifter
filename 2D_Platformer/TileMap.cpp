@@ -15,7 +15,16 @@ TileMap::TileMap(unsigned width, unsigned height, sf::Texture* tile_sheet, unsig
 		this->tiles[i].resize(height, nullptr);
 	}
 	for (int i = 0; i < this->tiles[0].size(); i++) {
-		addTile(i, 10, 2);
+		addTile(i, 0, 3);
+	}
+	for (int i = 0; i < this->tiles[0].size(); i++) {
+		addTile(i, height-1, 3);
+	}
+	for (int i = 0; i < this->tiles[0].size(); i++) {
+		addTile(0, i, 3);
+	}
+	for (int i = 0; i < this->tiles[0].size(); i++) {
+		addTile(width-1, 1, 3);
 	}
 }
 
@@ -28,11 +37,20 @@ TileMap::~TileMap(){
 	}
 }
 
+bool TileMap::isDamagingTile(unsigned x, unsigned y){
+	if (x < this->tiles.size() && x >= 0) {
+		if (y < this->tiles[x].size() && y >= 0) {
+			if (this->tiles[x][y] != nullptr) return this->tiles[x][y]->getDamaging();
+		}
+	}
+	return false;
+}
+
 void TileMap::addTile(unsigned x, unsigned y, int tileType){
 	if (x < this->tiles.size() && x >= 0) {
 		if (y < this->tiles[x].size() && y >= 0) {
 			if (this->tiles[x][y] == nullptr && 0<=tileType && tileType<=7) {
-				this->tiles[x][y] = new Tile(x, y, this->tileSize, this->tileSheet, tileType, tileType);
+				this->tiles[x][y] = new Tile(x, y, this->tileSize, this->tileSheet, tileType, tileType==6);
 			}
 		}
 	}

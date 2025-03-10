@@ -27,12 +27,18 @@ void Game::initTileSheet(){
 	}
 }
 
+void Game::initFont(){
+	if (!this->tileSheet.loadFromFile("Fonts/EmblemaOne-Regular.ttf")) {
+		std::cout << "ERROR: Font failed to load!\n";
+	}
+}
+
 void Game::initPlayer(){
 	this->player = new Player();
 }
 
 void Game::initTileMap(){
-	this->tileMap = new TileMap(20, 20, &this->tileSheet, 64);
+	this->tileMap = new TileMap(50, 50, &this->tileSheet, 64);
 }
 
 void Game::initCamera(){
@@ -200,6 +206,22 @@ sf::FloatRect Game::getIntersection(const sf::FloatRect& rect1, const sf::FloatR
 	return sf::FloatRect();
 }
 
+void Game::updatePlayerDamage(){
+	//std::cout << this->player->getHealth() << "\n";
+	sf::Vector2f position = player->getPosition();
+	//std::cout << position.x << " " << position.y;
+	if (position.x < -100 || position.x > tileMap->getWidth() * tileMap->getTileSize() +100 || position.y < -100 || position.y > tileMap->getHeight()*tileMap->getTileSize() + 100) {
+		this->player->kill();
+	}
+	position.x += player->getGlobalBounds().width/2;
+	position.y += int(player->getGlobalBounds().height*1.2);
+	int tileX = int(position.x) / int(this->tileMap->getTileSize());
+	int tileY = int(position.y) / int(this->tileMap->getTileSize());
+	if (this->tileMap->isDamagingTile(tileX, tileY)) {
+		this->player->takeDamage(1);
+	}
+}
+
 
 void Game::updateTileMap(){
 	this->tileMap->update();
@@ -242,6 +264,7 @@ void Game::update(){
 	this->updatePlayer();
 	this->updateCollision();
 	this->playerMove();
+	this->updatePlayerDamage();
 	this->updateCamera();
 
 	this->updateTileMap();
@@ -255,12 +278,72 @@ void Game::renderTileMap(){
 	this->tileMap->render(this->window);
 }
 
+void Game::renderHP(){
+	float currentHealth = this->player->getHealth();
+	float maxHealth = this->player->getMaxHealth();
+
+	float barX = 20.f;
+	float barY = 20.f;
+
+	float barWidth = 200.f;  
+	float barHeight = 20.f;  
+
+	float currentWidth = (currentHealth / maxHealth) * barWidth;
+	float borderWidth = 4.f;
+
+	sf::RectangleShape barBackground(sf::Vector2f(barWidth + borderWidth * 2, barHeight + borderWidth * 2));
+	barBackground.setPosition(barX-borderWidth, barY-borderWidth);
+	barBackground.setFillColor(sf::Color(50, 50, 50));  
+
+	sf::RectangleShape barForeground(sf::Vector2f(currentWidth, barHeight));
+	barForeground.setPosition(barX, barY);
+
+	if (currentHealth > maxHealth * 0.5f) {
+		barForeground.setFillColor(sf::Color::Green);  
+	}
+	else if (currentHealth > maxHealth * 0.2f) {
+		barForeground.setFillColor(sf::Color::Yellow); 
+	}
+	else {
+		barForeground.setFillColor(sf::Color::Red);  
+	}
+	sf::View originalView = this->window.getView();
+
+	this->window.setView(this->window.getDefaultView());
+
+	this->window.draw(barBackground);
+
+	this->window.draw(barForeground);
+
+	this->window.setView(originalView);
+}
+
+void Game::renderGameOver(){
+	this->window.clear();
+	sf::View originalView = this->window.getView();
+	this->window.setView(this->window.getDefaultView());
+	sf::Text text;
+	text.setFont(font);
+	text.setString("Game Over");
+	text.setCharacterSize(30);
+	text.setFillColor(sf::Color::White);
+	text.setPosition(480, 320);
+	this->window.draw(text);
+	this->window.setView(originalView);
+}
+
 void Game::render(){
 	sf::Color color(122, 134, 151);
 	this->window.clear(color);
-	this->camera->apply(window);
-	this->renderTileMap();
-	this->renderPlayer();
+	if (this->player->getHealth() > 0) {
+		this->camera->apply(window);
+		this->renderTileMap();
+		this->renderPlayer();
+		this->renderHP();
+	}
+	else {
+		this->renderGameOver();
+	}
 
 	this->window.display();
 }

@@ -18,6 +18,8 @@ void Player::initTexture(){
 
 void Player::initVars() {
 	this->animState = IDLE;
+	this->maxHealth = 20;
+	this->setHealth(this->maxHealth);
 }
 
 void Player::initSprite(){
@@ -25,11 +27,13 @@ void Player::initSprite(){
 	this->currentFrame = sf::IntRect(6, 32, 22, 32);
 	this->sprite.setTextureRect(currentFrame);
 	this->sprite.setScale(2.f, 2.f);
+	this->sprite.setPosition(64, 64);
 }
 
 void Player::initAnimations(){
 	this->animationTimer.restart();
 	this->animationSwitch = true;
+	this->isHurt = false;
 }
 
 void Player::initPhysics() {
@@ -139,6 +143,16 @@ void Player::updatePhysics(){
 	
 }
 
+void Player::takeDamage(int amount){
+	if (this->isHurt) return;
+	this->health -= amount;
+	this->hurtTimer.restart();
+	if (this->health < 0) {
+		this->health = 0;  
+	}
+	this->isHurt = true;
+}
+
 void Player::move() {
 	this->sprite.move(this->velocity);
 }
@@ -219,6 +233,18 @@ void Player::updateAnimation(){
 	else {
 		this->animationTimer.restart();
 	}
+	if (this->isHurt) {
+		if (this->hurtTimer.getElapsedTime().asSeconds() >= 1.0f) {
+			this->isHurt = false;
+			
+		}
+		else if (this->hurtTimer.getElapsedTime().asSeconds() >= 0.8f) {
+			this->sprite.setColor(sf::Color::White);
+		}
+		else {
+			this->sprite.setColor(sf::Color(255, 0, 0, 128));
+		}
+	}
 }
 
 void Player::update(){
@@ -237,4 +263,8 @@ void Player::render(sf::RenderTarget& target){
 	boundsRect.setOutlineColor(sf::Color::Red);       
 	boundsRect.setOutlineThickness(2);
 	target.draw(boundsRect);*/
+}
+
+void Player::kill(){
+	setHealth(0);
 }

@@ -10,6 +10,7 @@ private:
 	sf::RenderWindow window;
 	sf::Event ev;
 	sf::Texture tileSheet;
+	sf::Font font;
 
 	Player* player;
 	TileMap* tileMap;
@@ -23,6 +24,7 @@ private:
 	void initWindow();
 	void initInput();
 	void initTileSheet();
+	void initFont();
 	void initPlayer();
 	void initTileMap();
 	void initCamera();
@@ -45,6 +47,7 @@ public:
 	void playerMove();
 	void updateCollision();
 	sf::FloatRect getIntersection(const sf::FloatRect& rect1, const sf::FloatRect& rect2);
+	void updatePlayerDamage();
 	void updateTileMap();
 	
 	void updateCamera();
@@ -54,6 +57,8 @@ public:
 
 	void renderPlayer();
 	void renderTileMap();
+	void renderHP();
+	void renderGameOver();
 	void render();
 	const sf::RenderWindow& getWindow() const;
 

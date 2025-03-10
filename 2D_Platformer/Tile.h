@@ -9,6 +9,8 @@ public:
 
 	const sf::FloatRect getGlobalBounds() const;
 
+	inline bool getDamaging() { return damaging; };
+
 	void update();
 	void render(sf::RenderTarget& target);
 };
