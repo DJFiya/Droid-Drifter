@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include "Player.h"
 #include "TileMap.h"
+#include "Camera.h"
 
 class Game {
 private:
@@ -12,6 +13,7 @@ private:
 
 	Player* player;
 	TileMap* tileMap;
+	Camera* camera;
 	std::map<std::string, sf::Keyboard::Key> keyBoardMappings;
 	std::map<std::string, sf::Mouse::Button> mouseMappings;
 
@@ -23,6 +25,7 @@ private:
 	void initTileSheet();
 	void initPlayer();
 	void initTileMap();
+	void initCamera();
 
 public:
 
@@ -43,6 +46,10 @@ public:
 	void updateCollision();
 	sf::FloatRect getIntersection(const sf::FloatRect& rect1, const sf::FloatRect& rect2);
 	void updateTileMap();
+	
+	void updateCamera();
+	float clamp(float value, float min, float max);
+	
 	void update();
 
 	void renderPlayer();

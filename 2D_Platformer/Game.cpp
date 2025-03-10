@@ -35,12 +35,17 @@ void Game::initTileMap(){
 	this->tileMap = new TileMap(20, 20, &this->tileSheet, 64);
 }
 
+void Game::initCamera(){
+	this->camera = new Camera(this->window);
+}
+
 Game::Game(){
 	this->initWindow();
 	this->initInput();
 	this->initTileSheet();
 	this->initTileMap();
 	this->initPlayer();
+	this->initCamera();
 }
 
 Game::~Game(){
@@ -59,8 +64,10 @@ void Game::setCurrentTile(int tileNum)
 }
 
 void Game::updateInput() {
-	const int mouseX = int(sf::Mouse::getPosition(this->getWindow()).x) / int(this->tileMap->getTileSize());
-	const int mouseY = int(sf::Mouse::getPosition(this->getWindow()).y) / int(this->tileMap->getTileSize());
+	sf::Vector2i mousePositionWindow = sf::Mouse::getPosition(this->getWindow());
+	sf::Vector2f mousePositionWorld = this->getWindow().mapPixelToCoords(mousePositionWindow, this->camera->getView());	
+	const int mouseX = int(mousePositionWorld.x) / int(this->tileMap->getTileSize());
+	const int mouseY = int(mousePositionWorld.y) / int(this->tileMap->getTileSize());
 
 	//
 	if (sf::Keyboard::isKeyPressed(this->keyBoardMappings["KEY_MOVE_LEFT"])) {
@@ -198,6 +205,31 @@ void Game::updateTileMap(){
 	this->tileMap->update();
 }
 
+void Game::updateCamera(){
+	sf::Vector2f playerPosition = this->player->getPosition();
+
+	sf::Vector2f mapSize(this->tileMap->getWidth() * this->tileMap->getTileSize(),
+		this->tileMap->getHeight() * this->tileMap->getTileSize());
+
+	sf::Vector2f viewSize = this->camera->getView().getSize();
+
+	float halfWidth = viewSize.x / 2.f;
+	float halfHeight = viewSize.y / 2.f;
+
+	sf::Vector2f targetPosition = playerPosition;
+
+	float clampedX = this->clamp(targetPosition.x, halfWidth, mapSize.x - halfWidth);
+	float clampedY = this->clamp(targetPosition.y, halfHeight, mapSize.y - halfHeight);
+
+	this->camera->update(sf::Vector2f(clampedX, clampedY));
+}
+
+float Game::clamp(float value, float min, float max){
+	if (value < min) return min;
+	if (value > max) return max;
+	return value;
+}
+
 void Game::update(){
 	//Polling Window events
 	while (this->window.pollEvent(this->ev)) {
@@ -210,6 +242,7 @@ void Game::update(){
 	this->updatePlayer();
 	this->updateCollision();
 	this->playerMove();
+	this->updateCamera();
 
 	this->updateTileMap();
 }
@@ -225,7 +258,7 @@ void Game::renderTileMap(){
 void Game::render(){
 	sf::Color color(122, 134, 151);
 	this->window.clear(color);
-
+	this->camera->apply(window);
 	this->renderTileMap();
 	this->renderPlayer();
 
