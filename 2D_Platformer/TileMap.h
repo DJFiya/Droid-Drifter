@@ -19,6 +19,7 @@ public:
 
 	//Functions
 	bool isDamagingTile(unsigned x, unsigned y);
+	bool isWinningTile(unsigned x, unsigned y);
 	void addTile(unsigned x, unsigned y, int tileType);
 	void removeTile(unsigned x, unsigned y);
 

@@ -38,12 +38,17 @@ void Game::initPlayer(){
 }
 
 void Game::initTileMap(){
-	this->tileMap = new TileMap(50, 50, &this->tileSheet, 64);
+	this->tileMap = new TileMap(100, 10, &this->tileSheet, 64);
 }
 
 void Game::initCamera(){
 	this->camera = new Camera(this->window);
 }
+
+void Game::initAI(){
+	this->ai = new AIPlayer(this->player, this->tileMap);
+}
+
 
 Game::Game(){
 	this->initWindow();
@@ -52,6 +57,7 @@ Game::Game(){
 	this->initTileMap();
 	this->initPlayer();
 	this->initCamera();
+	this->initAI();
 }
 
 Game::~Game(){
@@ -104,6 +110,10 @@ void Game::updateInput() {
 	else if (sf::Mouse::isButtonPressed(this->mouseMappings["BTN_REMOVE_TILE"])) {
 		this->tileMap->removeTile(mouseX, mouseY);
 	}
+}
+
+void Game::updateAI(){
+	this->ai->update();
 }
 
 void Game::updatePlayer(){
@@ -221,6 +231,20 @@ void Game::updatePlayerDamage(){
 		this->player->takeDamage(1);
 	}
 }
+bool Game::playerWin() {
+	//std::cout << this->player->getHealth() << "\n";
+	sf::Vector2f position = player->getPosition();
+	//std::cout << position.x << " " << position.y;
+	position.x += player->getGlobalBounds().width / 2;
+	position.y += int(player->getGlobalBounds().height * 1.2);
+	int tileX = int(position.x) / int(this->tileMap->getTileSize());
+	int tileY = int(position.y) / int(this->tileMap->getTileSize());
+	return (this->tileMap->isWinningTile(tileX, tileY));
+}
+
+bool Game::playerLost() {
+	return player->getHealth() <= 0;
+}
 
 
 void Game::updateTileMap(){
@@ -252,22 +276,135 @@ float Game::clamp(float value, float min, float max){
 	return value;
 }
 
-void Game::update(){
-	//Polling Window events
+void Game::update() {
+	// Polling Window events
 	while (this->window.pollEvent(this->ev)) {
 		if (this->ev.type == sf::Event::Closed) this->window.close();
 		else if (this->ev.type == sf::Event::KeyPressed && this->ev.key.code == sf::Keyboard::Escape) this->window.close();
 	}
+
+	if (this->mode == GameMode::PLAYER_MODE) {
+		// Use normal player input
+		this->updateInput();
+		this->updatePlayer();
+		this->updateCollision();
+		this->playerMove();
+		this->updatePlayerDamage();
+		this->updateCamera();
+		this->updateTileMap();
+	}
+	else if (this->mode == GameMode::AI_MODE) {
+		// Use AI player input
+		this->updateAI();
+		this->updatePlayer();
+		this->updateCollision();
+		this->playerMove();
+		this->updatePlayerDamage();
+		this->updateCamera();
+		this->updateTileMap();
+	}
+	else if (this->mode == GameMode::TRAINING_MODE) {
+		// Training mode logic - run a single step of training
+		this->updateTrainingStep();
+	}
+}
+
+void Game::updateTrainingStep() {
+	try {
+		// Your updateTrainingStep code
+		static int episodeCount = 0;
+		static int stepCount = 0;
+		static float episodeReward = 0.0f;
+		static float totalReward = 0.0f;
+		static std::vector<float> episodeRewards;
+		static const int MAX_STEPS_PER_EPISODE = 2000;
+		static const int NUM_EPISODES = 100;
+		static bool initialized = false;
+
+		// Initialize training if needed
+		if (!initialized) {
+			std::cout << "Starting training for " << NUM_EPISODES << " episodes..." << std::endl;
+			this->player->reset();
+			episodeCount = 0;
+			totalReward = 0.0f;
+			episodeRewards.clear();
+			initialized = true;
+		}
+
+		// Check if training is complete
+		if (episodeCount >= NUM_EPISODES) {
+			if (episodeCount == NUM_EPISODES) {
+				// Calculate and display final statistics
+				float avgReward = totalReward / NUM_EPISODES;
+				std::cout << "Training complete. Average reward: " << avgReward << std::endl;
+
+				// Save final model
+				this->ai->saveModel("model_final.pt");
+				std::cout << "Final model saved to model_final.pt" << std::endl;
+
+				// Reset to AI mode or player mode after training
+				this->mode = GameMode::AI_MODE;
+				episodeCount++; // Increment to avoid repeating this code
+			}
+			return;
+		}
+
+		// Check if we need to start a new episode
+		if (stepCount == 0) {
+			this->player->reset();
+			episodeReward = 0.0f;
+		}
+
+		// Update AI and game state for one step
+		this->updateAI();
+		this->updatePlayer();
+		this->updateCollision();
+		this->playerMove();
+		this->updatePlayerDamage();
+		this->updateCamera();
+		this->updateTileMap();
+
+		// Collect reward from this step
+		float stepReward = this->ai->getLastReward();
+		episodeReward += stepReward;
+
+		// Increment step counter
+		stepCount++;
+
+		// Check if episode is complete
+		bool episodeComplete = (player->getPosition().x >= 5336 || this->player->getHealth() <= 0 || stepCount >= MAX_STEPS_PER_EPISODE);
+
+		if (episodeComplete) {
+			// Record episode stats
+			episodeRewards.push_back(episodeReward);
+			totalReward += episodeReward;
+
+			// Log progress periodically
+			if ((episodeCount + 1) % 10 == 0) {
+				std::cout << "Episode " << (episodeCount + 1) << "/" << NUM_EPISODES
+					<< " completed. Reward: " << episodeReward
+					<< " Steps: " << stepCount << std::endl;
+			}
+
+			// Save model periodically
+			if ((episodeCount + 1) % 100 == 0) {
+				std::string filename = "model_episode_" + std::to_string(episodeCount + 1) + ".pt";
+				this->ai->saveModel(filename);
+				std::cout << "Model saved to " << filename << std::endl;
+			}
+
+			// Reset for next episode
+			episodeCount++;
+			stepCount = 0;
+		}
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Exception in updateTrainingStep: " << e.what() << std::endl;
+	}
+	catch (...) {
+		std::cerr << "Unknown exception in updateTrainingStep" << std::endl;
+	}
 	
-	this->updateInput();
-
-	this->updatePlayer();
-	this->updateCollision();
-	this->playerMove();
-	this->updatePlayerDamage();
-	this->updateCamera();
-
-	this->updateTileMap();
 }
 
 void Game::renderPlayer(){
@@ -317,9 +454,9 @@ void Game::renderHP(){
 
 	this->window.setView(originalView);
 }
-
+//Function for real player, not for ai
 void Game::renderGameOver(){
-	this->window.clear();
+	/*this->window.clear();
 	sf::View originalView = this->window.getView();
 	this->window.setView(this->window.getDefaultView());
 	sf::Text text;
@@ -329,21 +466,21 @@ void Game::renderGameOver(){
 	text.setFillColor(sf::Color::White);
 	text.setPosition(480, 320);
 	this->window.draw(text);
-	this->window.setView(originalView);
+	this->window.setView(originalView);*/
 }
 
 void Game::render(){
 	sf::Color color(122, 134, 151);
 	this->window.clear(color);
-	if (this->player->getHealth() > 0) {
-		this->camera->apply(window);
-		this->renderTileMap();
-		this->renderPlayer();
-		this->renderHP();
-	}
+	/*if (this->player->getHealth() > 0) {*/
+	this->camera->apply(window);
+	this->renderTileMap();
+	this->renderPlayer();
+	this->renderHP();
+	/*}
 	else {
 		this->renderGameOver();
-	}
+	}*/
 
 	this->window.display();
 }

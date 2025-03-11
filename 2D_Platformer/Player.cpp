@@ -110,9 +110,11 @@ void Player::move(const float dir_x, const float dir_y){
 
 void Player::jump()
 {
-	this->velocity.y = -this->jumpForce;
-	this->canJump = false;
-	this->isJumping = true;
+	if (this->canJump == true) {
+		this->velocity.y = -this->jumpForce;
+		this->canJump = false;
+		this->isJumping = true;
+	}
 }
 
 void Player::shortjump(){
@@ -267,4 +269,11 @@ void Player::render(sf::RenderTarget& target){
 
 void Player::kill(){
 	setHealth(0);
+}
+
+void Player::reset(){
+	resetVelocityX();
+	resetVelocityY();
+	setPosition(128, 320);
+	setHealth(maxHealth);
 }

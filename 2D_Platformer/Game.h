@@ -3,7 +3,9 @@
 #include "Player.h"
 #include "TileMap.h"
 #include "Camera.h"
-
+#include "AIPlayer.h"
+#include "GameEvaluator.h"
+enum GameMode {PLAYER_MODE = 0, AI_MODE, TRAINING_MODE};
 class Game {
 private:
 	//Data
@@ -15,9 +17,10 @@ private:
 	Player* player;
 	TileMap* tileMap;
 	Camera* camera;
+	AIPlayer* ai;
 	std::map<std::string, sf::Keyboard::Key> keyBoardMappings;
 	std::map<std::string, sf::Mouse::Button> mouseMappings;
-
+	GameMode mode = TRAINING_MODE;
 	int currentTile = 0;
 
 	//Functions
@@ -28,8 +31,11 @@ private:
 	void initPlayer();
 	void initTileMap();
 	void initCamera();
+	void initAI();
 
 public:
+
+	inline GameMode getMode() { return mode; };
 
 	//Initializers
 	Game();
@@ -43,6 +49,7 @@ public:
 
 	//Functions
 	void updateInput();
+	void updateAI();
 	void updatePlayer();
 	void playerMove();
 	void updateCollision();
@@ -54,6 +61,10 @@ public:
 	float clamp(float value, float min, float max);
 	
 	void update();
+	void updateTrainingStep();
+
+	bool playerWin();
+	bool playerLost();
 
 	void renderPlayer();
 	void renderTileMap();

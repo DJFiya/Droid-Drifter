@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Tile.h"
 
-Tile::Tile(const unsigned& grid_pos_x, const unsigned& grid_pos_y, const unsigned& tile_size, sf::Texture* texture_sheet, int tileType, bool damaging) : damaging(damaging) {
+Tile::Tile(const unsigned& grid_pos_x, const unsigned& grid_pos_y, const unsigned& tile_size, sf::Texture* texture_sheet, int tileType, bool damaging) : damaging(damaging), type(tileType){
 	this->sprite.setTexture(*texture_sheet);
 	int size = 8;
 	int origin_x = size * (tileType % 2);
