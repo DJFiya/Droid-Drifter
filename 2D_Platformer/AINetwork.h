@@ -16,4 +16,6 @@ public:
     std::pair<bool, int> predictAction(torch::Tensor state);
     void updateReward(float reward);
     void saveModel(const std::string& filename);
+    void loadModel(const std::string& filename);
+
 };

@@ -311,17 +311,15 @@ void Game::update() {
 
 void Game::updateTrainingStep() {
 	try {
-		// Your updateTrainingStep code
 		static int episodeCount = 0;
 		static int stepCount = 0;
 		static float episodeReward = 0.0f;
 		static float totalReward = 0.0f;
 		static std::vector<float> episodeRewards;
-		static const int MAX_STEPS_PER_EPISODE = 2000;
-		static const int NUM_EPISODES = 100;
+		static const int MAX_STEPS_PER_EPISODE = 2800;
+		static const int NUM_EPISODES = 300;
 		static bool initialized = false;
 
-		// Initialize training if needed
 		if (!initialized) {
 			std::cout << "Starting training for " << NUM_EPISODES << " episodes..." << std::endl;
 			this->player->reset();
@@ -331,31 +329,26 @@ void Game::updateTrainingStep() {
 			initialized = true;
 		}
 
-		// Check if training is complete
 		if (episodeCount >= NUM_EPISODES) {
 			if (episodeCount == NUM_EPISODES) {
-				// Calculate and display final statistics
 				float avgReward = totalReward / NUM_EPISODES;
 				std::cout << "Training complete. Average reward: " << avgReward << std::endl;
 
-				// Save final model
-				this->ai->saveModel("model_final.pt");
+				if (this->ai) {
+					this->ai->saveModel("model_final1.pt");
+				}
 				std::cout << "Final model saved to model_final.pt" << std::endl;
 
-				// Reset to AI mode or player mode after training
 				this->mode = GameMode::AI_MODE;
-				episodeCount++; // Increment to avoid repeating this code
 			}
 			return;
 		}
 
-		// Check if we need to start a new episode
 		if (stepCount == 0) {
 			this->player->reset();
 			episodeReward = 0.0f;
 		}
 
-		// Update AI and game state for one step
 		this->updateAI();
 		this->updatePlayer();
 		this->updateCollision();
@@ -364,36 +357,29 @@ void Game::updateTrainingStep() {
 		this->updateCamera();
 		this->updateTileMap();
 
-		// Collect reward from this step
 		float stepReward = this->ai->getLastReward();
 		episodeReward += stepReward;
 
-		// Increment step counter
 		stepCount++;
 
-		// Check if episode is complete
 		bool episodeComplete = (player->getPosition().x >= 5336 || this->player->getHealth() <= 0 || stepCount >= MAX_STEPS_PER_EPISODE);
 
 		if (episodeComplete) {
-			// Record episode stats
 			episodeRewards.push_back(episodeReward);
 			totalReward += episodeReward;
 
-			// Log progress periodically
 			if ((episodeCount + 1) % 10 == 0) {
 				std::cout << "Episode " << (episodeCount + 1) << "/" << NUM_EPISODES
 					<< " completed. Reward: " << episodeReward
 					<< " Steps: " << stepCount << std::endl;
 			}
 
-			// Save model periodically
 			if ((episodeCount + 1) % 100 == 0) {
 				std::string filename = "model_episode_" + std::to_string(episodeCount + 1) + ".pt";
 				this->ai->saveModel(filename);
 				std::cout << "Model saved to " << filename << std::endl;
 			}
 
-			// Reset for next episode
 			episodeCount++;
 			stepCount = 0;
 		}
@@ -401,9 +387,9 @@ void Game::updateTrainingStep() {
 	catch (const std::exception& e) {
 		std::cerr << "Exception in updateTrainingStep: " << e.what() << std::endl;
 	}
-	catch (...) {
+	/*catch (...) {
 		std::cerr << "Unknown exception in updateTrainingStep" << std::endl;
-	}
+	}*/
 	
 }
 

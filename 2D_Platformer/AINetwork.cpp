@@ -72,5 +72,26 @@ void AINetwork::updateReward(float reward) {
 }
 
 void AINetwork::saveModel(const std::string& filename) {
-    torch::save(shared_from_this(), filename);
+    try {
+        // Save just the model's state dictionary (parameters)
+        torch::serialize::OutputArchive archive;
+        this->save(archive);
+        archive.save_to(filename);
+        std::cout << "Successfully saved model state to: " << filename << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error saving model: " << e.what() << std::endl;
+    }
+}
+
+void AINetwork::loadModel(const std::string& filename) {
+    try {
+        torch::serialize::InputArchive archive;
+        archive.load_from(filename);
+        this->load(archive);
+        std::cout << "Successfully loaded model state from: " << filename << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error loading model: " << e.what() << std::endl;
+    }
 }

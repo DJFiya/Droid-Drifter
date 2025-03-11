@@ -4,7 +4,6 @@
 #include "TileMap.h"
 #include "Camera.h"
 #include "AIPlayer.h"
-#include "GameEvaluator.h"
 enum GameMode {PLAYER_MODE = 0, AI_MODE, TRAINING_MODE};
 class Game {
 private:
