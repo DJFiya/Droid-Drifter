@@ -106,6 +106,8 @@ void Player::move(const float dir_x, const float dir_y){
 	if (std::abs(this->velocity.x) > this->velocityMax) {
 		this->velocity.x = this->velocityMax * ((this->velocity.x < 0.f) ? -1.f : 1.f);
 	}
+
+	if (velocity.y != 0) this->setCanJump(false);
 }
 
 void Player::jump()

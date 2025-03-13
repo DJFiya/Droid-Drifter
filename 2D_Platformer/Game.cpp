@@ -90,6 +90,7 @@ void Game::updateInput() {
 	}
 	if (sf::Keyboard::isKeyPressed(this->keyBoardMappings["KEY_JUMP"]) && this->player->getCanJump()) {
 		this->player->jump();
+		this->player->setCanJump(false);
 	}
 	else if ((!sf::Keyboard::isKeyPressed(this->keyBoardMappings["KEY_JUMP"])) && this->player->getVelocity().y<0) {
 		this->player->shortjump();
@@ -123,6 +124,7 @@ void Game::updatePlayer(){
 void Game::playerMove()
 {
 	this->player->move();
+	//std::cout << "Can Jump: " << this->player->getCanJump() << "\n";
 }
 
 void Game::updateCollision(){
@@ -228,7 +230,8 @@ void Game::updatePlayerDamage(){
 	int tileX = int(position.x) / int(this->tileMap->getTileSize());
 	int tileY = int(position.y) / int(this->tileMap->getTileSize());
 	if (this->tileMap->isDamagingTile(tileX, tileY)) {
-		this->player->takeDamage(1);
+		if(this->mode == PLAYER_MODE) this->player->takeDamage(5);
+		else this->player->takeDamage(20);
 	}
 }
 bool Game::playerWin() {
@@ -316,8 +319,8 @@ void Game::updateTrainingStep() {
 		static float episodeReward = 0.0f;
 		static float totalReward = 0.0f;
 		static std::vector<float> episodeRewards;
-		static const int MAX_STEPS_PER_EPISODE = 2800;
-		static const int NUM_EPISODES = 300;
+		static const int MAX_STEPS_PER_EPISODE = 2000;
+		static const int NUM_EPISODES = 2000;
 		static bool initialized = false;
 
 		if (!initialized) {
@@ -362,7 +365,7 @@ void Game::updateTrainingStep() {
 
 		stepCount++;
 
-		bool episodeComplete = (player->getPosition().x >= 5336 || this->player->getHealth() <= 0 || stepCount >= MAX_STEPS_PER_EPISODE);
+		bool episodeComplete = (player->getPosition().x >= 6336 || this->player->getHealth() <= 0 || stepCount >= MAX_STEPS_PER_EPISODE);
 
 		if (episodeComplete) {
 			episodeRewards.push_back(episodeReward);
@@ -375,7 +378,7 @@ void Game::updateTrainingStep() {
 			}
 
 			if ((episodeCount + 1) % 100 == 0) {
-				std::string filename = "model_episode_" + std::to_string(episodeCount + 1) + ".pt";
+				std::string filename = "model"+ std::to_string(ai->getId())+"_episode_" + std::to_string(episodeCount + 1) + ".pt";
 				this->ai->saveModel(filename);
 				std::cout << "Model saved to " << filename << std::endl;
 			}

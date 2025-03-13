@@ -40,32 +40,37 @@ std::pair<bool, int> AINetwork::predictAction(torch::Tensor state) {
 void AINetwork::updateReward(float reward) {
     reward_memory.push_back(reward);
 
-    // Train only if we have enough experiences
     if (state_memory.size() < 32) return;
 
     optimizer.zero_grad();
 
-    // Convert vectors to tensors
     torch::Tensor states = torch::stack(state_memory);
     torch::Tensor actions = torch::stack(action_memory);
     torch::Tensor rewards = torch::tensor(reward_memory);
 
-    // Forward pass
+    torch::Tensor normalized_rewards = rewards;
+    if (rewards.size(0) > 1) { 
+        normalized_rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
+    }
+
     torch::Tensor x = forward(states);
     torch::Tensor jump_pred = torch::sigmoid(fc3_jump->forward(x));
     torch::Tensor move_pred = torch::softmax(fc3_move->forward(x), 1);
 
-    // Compute loss
     torch::Tensor jump_loss = torch::binary_cross_entropy(jump_pred, actions.index({ torch::indexing::Slice(), 0 }));
     torch::Tensor move_loss = torch::cross_entropy_loss(move_pred, actions.index({ torch::indexing::Slice(), 1 }).to(torch::kLong));
+    torch::Tensor loss = (jump_loss + move_loss) * rewards.mean(); 
 
-    torch::Tensor loss = (jump_loss + move_loss) * rewards.mean(); // Reward-weighted loss
-
-    // Backpropagation
     loss.backward();
     optimizer.step();
 
-    // Clear memory
+    const size_t keep_size = 8; 
+    if (state_memory.size() > keep_size) {
+        state_memory.erase(state_memory.begin(), state_memory.begin() + (state_memory.size() - keep_size));
+        action_memory.erase(action_memory.begin(), action_memory.begin() + (action_memory.size() - keep_size));
+        reward_memory.erase(reward_memory.begin(), reward_memory.begin() + (reward_memory.size() - keep_size));
+    }
+
     state_memory.clear();
     action_memory.clear();
     reward_memory.clear();
@@ -73,7 +78,6 @@ void AINetwork::updateReward(float reward) {
 
 void AINetwork::saveModel(const std::string& filename) {
     try {
-        // Save just the model's state dictionary (parameters)
         torch::serialize::OutputArchive archive;
         this->save(archive);
         archive.save_to(filename);

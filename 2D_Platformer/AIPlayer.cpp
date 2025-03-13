@@ -6,6 +6,8 @@ AIPlayer::AIPlayer(Player* player, TileMap* tileMap) {
     this->player = player;
     this->tileMap = tileMap;
     this->aiNetwork = new AINetwork(8, 10);
+    srand(time(0));
+    this->id = rand();
 }
 
 void AIPlayer::update() {
@@ -14,6 +16,10 @@ void AIPlayer::update() {
 
     int tileX = int(position.x) / int(this->tileMap->getTileSize());
     int tileY = int(position.y) / int(this->tileMap->getTileSize());
+
+    int tileKey = tileX * 10000 + tileY/4; // Create unique key for this tile position
+    visitedTiles[tileKey] = visitedTiles[tileKey] + 1;
+    recentTiles[tileKey] = totalFrames;
 
     // Get surrounding tiles
     Tile* belowTile = this->tileMap->getTile(tileX, tileY + 1);
@@ -89,22 +95,73 @@ void AIPlayer::update() {
     }
     float reward = 0.0f;
 
-    if (frontTile && frontTile->isWin()) {
+    if (frontTile && frontTile->isWin() || belowTile && belowTile->isWin()) {
         reward += 25.0f;  
     }
     else if (belowTile && belowTile->getDamaging()) {
         reward -= 1.5f;
     }
     else {
-        if (position.x > previousX) {
+        if (position.x > previousX + 20) {
             reward += 1.0f;
+
+            if (position.x - lastSignificantX > SIGNIFICANT_MOVEMENT) {
+                reward += 5.0f;
+                lastSignificantX = position.x;
+            }
         }
-        else if (position.x < previousX) {
-            reward += 0.5f + (0.1f * std::min(stuckCounter, 10));
+        else if (position.x + 20 < previousX) {
+            reward += 0.3f;
+        }
+    }
+    for (auto it = recentTiles.begin(); it != recentTiles.end(); ) {
+        if (totalFrames - it->second > RECENT_TILE_MEMORY) {
+            it = recentTiles.erase(it);
+        }
+        else {
+            ++it;
         }
     }
 
-    if (std::abs(position.x - previousX) < 0.1f && std::abs(velocity.y) < 0.1f) {
+    int explorationRadius = 3; 
+    int uniqueTilesInRecentMemory = recentTiles.size();
+    int totalVisitsInLocalArea = 0;
+    int uniqueTilesInLocalArea = 0;
+    std::set<int> localTiles;
+
+    for (int x = tileX - explorationRadius; x <= tileX + explorationRadius; x++) {
+        for (int y = tileY - explorationRadius; y <= tileY + explorationRadius; y++) {
+            int checkKey = x * 10000 + y;
+            if (visitedTiles.find(checkKey) != visitedTiles.end()) {
+                totalVisitsInLocalArea += visitedTiles[checkKey];
+                localTiles.insert(checkKey);
+            }
+        }
+    }
+    uniqueTilesInLocalArea = localTiles.size();
+
+    float averageVisitsPerTile = (uniqueTilesInLocalArea > 0) ?
+        (float)totalVisitsInLocalArea / uniqueTilesInLocalArea : 0;
+
+    if (averageVisitsPerTile > 3.0f && uniqueTilesInRecentMemory < 8) {
+        smallAreaFrames++;
+        float localPenalty = 0.7f * std::min(smallAreaFrames / 10, 10);
+        reward -= localPenalty;
+    }
+    else if (uniqueTilesInRecentMemory >= 8) {
+        smallAreaFrames = std::max(0, smallAreaFrames - 2);
+    }
+    else {
+        smallAreaFrames = std::max(0, smallAreaFrames - 1);
+    }
+
+    int currentTileVisits = visitedTiles[tileKey];
+    if (currentTileVisits > 5) {
+        // Increasing penalty for repeatedly visiting the same tile
+        reward -= 0.2f * std::min(currentTileVisits - 5, 10);
+    }
+
+    if (std::abs(position.x - previousX) < 0.1f) {
         reward -= 0.2f * std::min(stuckCounter, 10);
         stuckCounter++;
     }
@@ -118,26 +175,28 @@ void AIPlayer::update() {
         float range = maxPos - minPos;
 
         if (range < 1.0f && stuckCounter > 5) {
-            reward -= 0.4f;  
+            reward -= 0.8f;  
         }
     }
 
     int currentChunk = static_cast<int>(position.x) / CHUNK_SIZE;
     if (exploredChunks.find(currentChunk) == exploredChunks.end()) {
-        reward += 6.0f;
+        reward += 8.0f;
         exploredChunks.insert(currentChunk);
     }
 
     if (framesSinceFarthestPosition > PROGRESS_PATIENCE) {
-        float progressPenalty = 0.8f * (1.0f + (framesSinceFarthestPosition - PROGRESS_PATIENCE) / 100.0f);
+        float progressPenalty = 1.5 * (1.0f + (framesSinceFarthestPosition - PROGRESS_PATIENCE) / 50.0f);
         reward -= progressPenalty;
     }
 
 
     previousX = position.x;
+    totalFrames++;
 
     lastReward = reward;
     aiNetwork->updateReward(reward);
+
 }
 
 void AIPlayer::move(int r) {
