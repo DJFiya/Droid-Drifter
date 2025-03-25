@@ -3,7 +3,7 @@
 
 void Game::initWindow(){
 	this->window.create(sf::VideoMode(960, 640), "Platformer AI", sf::Style::Close | sf::Style::Titlebar);
-	this->window.setFramerateLimit(90);
+	this->window.setFramerateLimit(1000);
 }
 
 void Game::initInput() {
@@ -320,7 +320,7 @@ void Game::updateTrainingStep() {
 		static float totalReward = 0.0f;
 		static std::vector<float> episodeRewards;
 		static const int MAX_STEPS_PER_EPISODE = 2000;
-		static const int NUM_EPISODES = 2000;
+		static const int NUM_EPISODES = 10000;
 		static bool initialized = false;
 
 		if (!initialized) {

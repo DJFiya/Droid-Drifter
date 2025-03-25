@@ -5,6 +5,7 @@ class AINetwork : public torch::nn::Module {
 private:
     const int BATCH_SIZE = 128;
     const int MEMORY_SIZE = 1024;  
+    const size_t buffer_capacity = 1000;
     std::vector<torch::Tensor> state_memory;
     std::vector<torch::Tensor> action_memory;
     std::vector<float> reward_memory;
